@@ -13,6 +13,12 @@
 #include "UnityStandardUtilsRero.cginc"
 #include "UnityShadowLibrary.cginc"
 
+// VRC Light Volumes support. Must come after UnityCG.cginc (already pulled in above) so its
+// fallback-to-light-probes path works. LightVolumeSH() below transparently returns either real
+// Light Volume data or light-probe-equivalent data depending on whether the current world has
+// Light Volumes set up, so callers never need to branch on availability themselves.
+#include "LightVolumes.cginc"
+
 float shEvaluateDiffuseL1Geomerics(float L0, float3 L1, float3 n)
 {
 	// average energy
@@ -180,8 +186,14 @@ inline UnityGI UnityGI_Base(UnityGIInput data, half occlusion, half3 normalWorld
 	if (!_StylizeRamp) shadow = data.atten;
     o_gi.light.color *= shadow;
 
+    // VRC Light Volumes: sample once per fragment and reuse below for the "fake" probe light
+    // direction as well as the indirect diffuse SH evaluation. Falls back to Unity light probe
+    // data automatically when no Light Volume is present in the world.
+    float3 lvL0, lvL1r, lvL1g, lvL1b;
+    LightVolumeSH(data.worldPos, lvL0, lvL1r, lvL1g, lvL1b);
+
     UNITY_BRANCH
-    half3 probeLightDir = normalize(mul(unity_ColorSpaceLuminance.rgb, half3x3(unity_SHAr.xyz, unity_SHAg.xyz, unity_SHAb.xyz)));
+    half3 probeLightDir = normalize(mul(unity_ColorSpaceLuminance.rgb, half3x3(lvL1r, lvL1g, lvL1b)));
     if (any(_WorldSpaceLightPos0) == 0)
     {
         o_gi.light.dir += probeLightDir;
@@ -193,7 +205,7 @@ inline UnityGI UnityGI_Base(UnityGIInput data, half occlusion, half3 normalWorld
     #endif
 
     #if !defined(POINT) && !defined(SPOT) && !defined(VERTEXLIGHT_ON)
-            if (length(unity_SHAr.xyz * unity_SHAr.w + unity_SHAg.xyz * unity_SHAg.w + unity_SHAb.xyz * unity_SHAb.w) == 0 && length(o_gi.light.dir) < 0.1)
+            if (length(lvL1r * lvL0.r + lvL1g * lvL0.g + lvL1b * lvL0.b) == 0 && length(o_gi.light.dir) < 0.1)
             {
                 o_gi.light.dir = _FakeLight;
             }
@@ -201,19 +213,28 @@ inline UnityGI UnityGI_Base(UnityGIInput data, half occlusion, half3 normalWorld
 
     o_gi.light.dir = normalize(o_gi.light.dir);
 
-	//Bakery Standard ambient fix
+	//Bakery Standard ambient fix (now sourced from VRC Light Volumes when present, light probes otherwise)
     #if defined(SAMPLE_SH_NONLINEAR)
-		float3 L0 = float3(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w);
-		float3 nonLinearSH = float3(0,0,0); 
+		float3 nonLinearSH = float3(0,0,0);
         float3 nonImpLight = Shade4PointLights(unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
                                                 unity_LightColor[0].rgb, unity_LightColor[1].rgb, unity_LightColor[2].rgb, unity_LightColor[3].rgb,
                                                 unity_4LightAtten0, data.worldPos, normalWorld);
-		nonLinearSH.r = shEvaluateDiffuseL1Geomerics(L0.r, unity_SHAr.xyz, normalWorld);
-		nonLinearSH.g = shEvaluateDiffuseL1Geomerics(L0.g, unity_SHAg.xyz, normalWorld);
-		nonLinearSH.b = shEvaluateDiffuseL1Geomerics(L0.b, unity_SHAb.xyz, normalWorld);
+		nonLinearSH.r = shEvaluateDiffuseL1Geomerics(lvL0.r, lvL1r, normalWorld);
+		nonLinearSH.g = shEvaluateDiffuseL1Geomerics(lvL0.g, lvL1g, normalWorld);
+		nonLinearSH.b = shEvaluateDiffuseL1Geomerics(lvL0.b, lvL1b, normalWorld);
 		o_gi.indirect.diffuse = max(0, nonLinearSH);
 		UNITY_BRANCH
-        if (_StylizeRamp || nonLinearSH==1,1,1) o_gi.indirect.diffuse = ShadeSH9(float4(normalWorld * _RampSmooth, 1));
+        // NOTE: this condition (comma operator in the parenthesized expression) evaluates to a
+        // constant 1, so this branch always runs regardless of _StylizeRamp. Left as-is/preserved
+        // from the original shader rather than changed as a drive-by fix.
+        if (_StylizeRamp || nonLinearSH==1,1,1)
+        {
+            float3 rampSH;
+            rampSH.r = shEvaluateDiffuseL1Geomerics(lvL0.r, lvL1r, normalWorld * _RampSmooth);
+            rampSH.g = shEvaluateDiffuseL1Geomerics(lvL0.g, lvL1g, normalWorld * _RampSmooth);
+            rampSH.b = shEvaluateDiffuseL1Geomerics(lvL0.b, lvL1b, normalWorld * _RampSmooth);
+            o_gi.indirect.diffuse = rampSH;
+        }
 	#endif
 
     //#if defined(UNITY_SHOULD_SAMPLE_SH)

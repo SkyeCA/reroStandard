@@ -1,4 +1,10 @@
 Changelog:
+1.0.8a+LightVolumes
+Added VRC Light Volumes support, vendored in Shaders/CGINC/LightVolumes.cginc.
+Bumped FORWARD/FORWARD_DELTA/DEFERRED shader target from 3.0/3.5 to 4.5 (required by Light Volumes' Texture3D/Texture2DArray/SamplerState usage).
+Stylized Rim/Specular tint (BRDF_Unity_Rero) and lightmapped/static geometry paths are unchanged and still read standard Unity light probes.
+Removed ReroUpdater.cs. This is now a standalone fork with no upstream update path, the old updater would have overwritten this Shaders folder if ever run.
+
 1.0.8a
 Fixed ambient value in worlds with a single color ambient value.
 

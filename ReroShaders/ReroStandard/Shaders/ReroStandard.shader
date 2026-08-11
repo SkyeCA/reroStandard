@@ -106,7 +106,7 @@ Shader ".Rero/Rero Standard/Rero Standard"
 			ZWrite [_ZWrite]
 
             CGPROGRAM
-            #pragma target 3.0
+            #pragma target 4.5
 
             // -------------------------------------
 
@@ -144,7 +144,7 @@ Shader ".Rero/Rero Standard/Rero Standard"
             ZTest LEqual
 
             CGPROGRAM
-            #pragma target 3.0
+            #pragma target 4.5
 
             // -------------------------------------
 
@@ -206,7 +206,7 @@ Shader ".Rero/Rero Standard/Rero Standard"
             Tags { "LightMode" = "Deferred" }
 
             CGPROGRAM
-            #pragma target 3.0
+            #pragma target 4.5
             #pragma exclude_renderers nomrt
 
 

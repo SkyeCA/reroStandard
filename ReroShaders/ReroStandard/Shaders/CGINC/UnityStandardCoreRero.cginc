@@ -12,7 +12,7 @@
 #include "UnityStandardUtilsRero.cginc"
 #include "UnityGBuffer.cginc"
 //#include "UnityStandardBRDF.cginc"
-#include "UnityStandardBRDFCustom.cginc"
+#include "UnityStandardBRDFcustom.cginc"
 #define UNITY_BRDF_PBS BRDF_Unity_Rero
 #include "AutoLight.cginc"
 //-------------------------------------------------------------------------------------
@@ -456,6 +456,15 @@ half4 fragForwardBaseInternal (VertexOutputForwardBase i)
 
     half4 c = UNITY_BRDF_PBS (s.diffColor, s.specColor, s.oneMinusReflectivity, s.smoothness, s.normalWorld, -s.eyeVec, gi.light, gi.indirect);
     c.rgb += Emission(i.tex.xy);
+
+    // VRC Light Volumes: approximated specular highlight from the volume's dominant light
+    // direction(s), on top of the regular reflection-probe specular already folded into gi.indirect
+    // above. Skipped when the user has turned glossy reflections off entirely.
+    #if !defined(_GLOSSYREFLECTIONS_OFF)
+        float3 lvSpecL0, lvSpecL1r, lvSpecL1g, lvSpecL1b;
+        LightVolumeSH(s.posWorld, lvSpecL0, lvSpecL1r, lvSpecL1g, lvSpecL1b);
+        c.rgb += LightVolumeSpecular(s.specColor, s.smoothness, s.normalWorld, -s.eyeVec, lvSpecL0, lvSpecL1r, lvSpecL1g, lvSpecL1b);
+    #endif
 
     UNITY_APPLY_FOG(i.fogCoord, c.rgb);
     return OutputForward (c, s.alpha);

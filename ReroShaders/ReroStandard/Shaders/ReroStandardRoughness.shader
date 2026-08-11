@@ -105,7 +105,7 @@ Shader ".Rero/Rero Standard/Rero Standard (Metallic Setup)"
 			ZWrite [_ZWrite]
 
             CGPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
 
             // -------------------------------------
             #pragma shader_feature _NORMALMAP
@@ -141,7 +141,7 @@ Shader ".Rero/Rero Standard/Rero Standard (Metallic Setup)"
             ZTest LEqual
 
             CGPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
 
             // -------------------------------------
 
@@ -196,7 +196,7 @@ Shader ".Rero/Rero Standard/Rero Standard (Metallic Setup)"
             Tags { "LightMode" = "Deferred" }
 
             CGPROGRAM
-            #pragma target 3.0
+            #pragma target 4.5
             #pragma exclude_renderers nomrt
 
 
