@@ -34,6 +34,7 @@ namespace UnityEditor
 			public static GUIContent rampOffText = new GUIContent("Ramp Offset", "Offset value");
 			public static GUIContent rampHardText = new GUIContent("Ramp Softness", "Hardness value");
 			public static GUIContent fakeLightText = new GUIContent("Fake Light Dir", "Direction of the fake light used in baked lighting scenarios. W is an intensity amplifier");
+			public static GUIContent minBrightnessText = new GUIContent("Min Brightness", "Floors the lit result so the material doesn't go pure black in worlds with no Light Volumes, no baked light probes, and no main directional light. 0 = no change in behavior. Can go above 1 to force a brighter minimum than the albedo itself for extremely dark worlds.");
             public static GUIContent highlightsText = new GUIContent("Specular Highlights", "Specular Highlights");
             public static GUIContent reflectionsText = new GUIContent("Reflections", "Glossy Reflections");
             public static GUIContent advancedChannelsText = new GUIContent("Advanced Channel Selection", "Color channel used for each PBR property");
@@ -69,6 +70,7 @@ namespace UnityEditor
 		MaterialProperty rampOff = null;
 		MaterialProperty rampHard = null;
 		MaterialProperty fakeLight = null;
+		MaterialProperty minBrightness = null;
         MaterialProperty highlights = null;
         MaterialProperty reflections = null;
         MaterialProperty advancedChannels = null;
@@ -132,6 +134,7 @@ namespace UnityEditor
 			rampOff = FindProperty("_RampThreshold", props);
 			rampHard = FindProperty("_RampSmooth", props);
 			fakeLight = FindProperty("_FakeLight", props);
+			minBrightness = FindProperty("_MinBrightness", props);
             highlights = FindProperty("_SpecularHighlights", props, false);
             reflections = FindProperty("_GlossyReflections", props, false);
             advancedChannels = FindProperty("_AdvancedChannels", props, false);
@@ -394,6 +397,7 @@ namespace UnityEditor
 			GUILayout.FlexibleSpace();
 
 			m_MaterialEditor.ShaderProperty(fakeLight, Styles.fakeLightText);
+			m_MaterialEditor.ShaderProperty(minBrightness, Styles.minBrightnessText);
         }
 
         void DoEmissionArea(Material material)

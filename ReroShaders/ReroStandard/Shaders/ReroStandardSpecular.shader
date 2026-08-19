@@ -31,6 +31,7 @@ Shader ".Rero/Rero Standard/Rero Standard (Specular Setup)"
 		_RampThreshold ("Ramp Threshold", Range(-1,1)) = 0
 		_RampSmooth ("Ramp Smoothing", Range(0,1)) = 1
 		_FakeLight ("Fake Light Direction", vector) = (0,.5,1,1)
+		_MinBrightness ("Min Brightness", Range(0,2)) = 0
 		_RimMax ("Rim Upper", Range(0,1)) = 1
 		_RimMin ("Rim Lower", Range(0,1)) = 0
 

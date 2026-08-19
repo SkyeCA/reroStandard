@@ -455,6 +455,12 @@ half4 fragForwardBaseInternal (VertexOutputForwardBase i)
     UnityGI gi = FragmentGI (s, occlusion, i.ambientOrLightmapUV, atten, mainLight);
 
     half4 c = UNITY_BRDF_PBS (s.diffColor, s.specColor, s.oneMinusReflectivity, s.smoothness, s.normalWorld, -s.eyeVec, gi.light, gi.indirect);
+
+    // Floor for worlds with no usable ambient (no Light Volumes, no baked light probes, no main
+    // directional light), where gi.light.color and gi.indirect.diffuse both collapse to zero and
+    // the surface would otherwise render pure black. Defaults to 0 (no change in behavior).
+    c.rgb = max(c.rgb, s.diffColor * _MinBrightness);
+
     c.rgb += Emission(i.tex.xy);
 
     // VRC Light Volumes: approximated specular highlight from the volume's dominant light
@@ -681,6 +687,10 @@ void fragDeferred (
     UnityGI gi = FragmentGI (s, occlusion, i.ambientOrLightmapUV, atten, dummyLight, sampleReflectionsInDeferred);
 
     half3 emissiveColor = UNITY_BRDF_PBS (s.diffColor, s.specColor, s.oneMinusReflectivity, s.smoothness, s.normalWorld, -s.eyeVec, gi.light, gi.indirect).rgb;
+
+    // Same ambient floor as the forward path; direct lighting is resolved later by Unity's
+    // deferred pass from the gbuffer, so only the GI term needs guarding here.
+    emissiveColor = max(emissiveColor, s.diffColor * _MinBrightness);
 
     #ifdef _EMISSION
         emissiveColor += Emission (i.tex.xy);

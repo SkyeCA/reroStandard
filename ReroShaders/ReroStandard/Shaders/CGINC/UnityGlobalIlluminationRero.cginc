@@ -137,6 +137,7 @@ inline half3 SubtractMainLightWithRealtimeAttenuationFromLightmap (half3 lightma
 half4 _FakeLight;
 half _RampSmooth;
 bool  _StylizeRamp;
+half _MinBrightness;
 
 half3 GetSHLength()
 {
